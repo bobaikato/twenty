@@ -143,10 +143,23 @@ tasks:
       `npx nx reset:env` overwrites existing `.env` files from `.env.example`,
       so this task intentionally mutates local environment configuration.
     category: setup
-    run: npx nx reset:env twenty-front && npx nx reset:env twenty-server
+    run: npx nx reset:env twenty-front
+    after_success:
+      - setup:env:server
     effects:
       writes:
         - packages/twenty-front/.env
+        - packages/twenty-server/.env
+  setup:env:server:
+    context: host
+    description: Reset the server env file from the repository template
+    notes: |
+      This is the backend follow-up for `setup:env` and uses the same Nx reset target.
+      `npx nx reset:env` overwrites the existing `.env` file from `.env.example`.
+    category: setup
+    run: npx nx reset:env twenty-server
+    effects:
+      writes:
         - packages/twenty-server/.env
   setup:services:
     context: host
@@ -282,7 +295,9 @@ tasks:
     context: host
     description: Run aggregate lint checks for frontend and backend
     category: test
-    run: sh -c 'npx nx lint twenty-front && npx nx lint twenty-server'
+    run: npx nx lint twenty-front
+    after_success:
+      - lint:server
     execution:
       default_mode: native
       modes:
@@ -319,7 +334,9 @@ tasks:
     context: host
     description: Run aggregate typechecks for frontend and backend
     category: test
-    run: sh -c 'npx nx typecheck twenty-front && npx nx typecheck twenty-server'
+    run: npx nx typecheck twenty-front
+    after_success:
+      - typecheck:server
     execution:
       default_mode: native
       modes:
@@ -395,7 +412,9 @@ tasks:
     context: host
     description: Run core frontend and backend unit test surfaces
     category: test
-    run: sh -c 'npx nx test twenty-front && npx nx test twenty-server'
+    run: npx nx test twenty-front
+    after_success:
+      - test:server
     execution:
       default_mode: native
       modes:
