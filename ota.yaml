@@ -184,7 +184,16 @@ tasks:
     notes: |
       Uses the documented dev services compose file (`postgres` + `redis`).
     category: setup
-    run: docker compose -f packages/twenty-docker/docker-compose.dev.yml up -d
+    adapter_inputs:
+      compose:
+        files:
+          - packages/twenty-docker/docker-compose.dev.yml
+    command:
+      exe: docker
+      args:
+        - compose
+        - up
+        - -d
     effects:
       network: true
       external_state:
@@ -434,7 +443,11 @@ tasks:
     notes: |
       This maps to the repository's top-level `yarn start` script.
     category: dev
-    run: yarn start
+    launch:
+      kind: command
+      exe: yarn
+      args:
+        - start
     depends_on:
       - setup:env
       - setup:services
@@ -455,7 +468,13 @@ tasks:
     context: host
     description: Start the frontend development server
     category: dev
-    run: npx nx start twenty-front
+    launch:
+      kind: command
+      exe: npx
+      args:
+        - nx
+        - start
+        - twenty-front
     depends_on:
       - setup:env
       - install
@@ -470,7 +489,13 @@ tasks:
     context: host
     description: Start the backend server
     category: dev
-    run: npx nx start twenty-server
+    launch:
+      kind: command
+      exe: npx
+      args:
+        - nx
+        - start
+        - twenty-server
     depends_on:
       - setup:env
       - setup:services
@@ -503,7 +528,17 @@ tasks:
       Starts server, worker, db, and redis from `packages/twenty-docker/docker-compose.yml`.
       Readiness is anchored to the server health endpoint.
     category: dev
-    run: docker compose -f packages/twenty-docker/docker-compose.yml up -d
+    adapter_inputs:
+      compose:
+        files:
+          - packages/twenty-docker/docker-compose.yml
+    launch:
+      kind: command
+      exe: docker
+      args:
+        - compose
+        - up
+        - -d
     depends_on:
       - prepare:env:compose
     effects:
@@ -593,8 +628,8 @@ agent:
   bootstrap:
     ota:
       note: Install ota when missing so contributors and agents can run the readiness workflows declared in this contract.
-      sh: curl -fsSL https://dist.ota.run/install.sh | OTA_VERSION=v1.6.19 sh
-      powershell: $env:OTA_VERSION='v1.6.19'; irm https://dist.ota.run/install.ps1 | iex
+      sh: curl -fsSL https://dist.ota.run/install.sh | OTA_VERSION=v1.6.21 sh
+      powershell: $env:OTA_VERSION='v1.6.21'; irm https://dist.ota.run/install.ps1 | iex
   notes: |
     Use `ota tasks --use .` to list runnable tasks and review the agent-safe surface before execution.
     Use `ota run prepare:env:server .` for native/integration workflows and
