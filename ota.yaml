@@ -393,6 +393,8 @@ tasks:
       toolchains:
         - node
     effects:
+      network: true
+      network_kind: integration_test
       writes:
         - packages/twenty-server/reset-logs.log
       external_state:
