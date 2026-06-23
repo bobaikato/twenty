@@ -145,7 +145,12 @@ tasks:
       `npx nx reset:env` overwrites existing `.env` files from `.env.example`,
       so this task intentionally mutates local environment configuration.
     category: setup
-    run: npx nx reset:env twenty-front
+    command:
+      exe: npx
+      args:
+        - nx
+        - reset:env
+        - twenty-front
     after_success:
       - setup:env:server
     effects:
@@ -159,7 +164,12 @@ tasks:
       This is the backend follow-up for `setup:env` and uses the same Nx reset target.
       `npx nx reset:env` overwrites the existing `.env` file from `.env.example`.
     category: setup
-    run: npx nx reset:env twenty-server
+    command:
+      exe: npx
+      args:
+        - nx
+        - reset:env
+        - twenty-server
     effects:
       writes:
         - packages/twenty-server/.env
@@ -170,7 +180,10 @@ tasks:
       Uses the repository's canonical setup script, which auto-detects local services
       versus Docker services and creates `default` and `test` databases.
     category: setup
-    run: bash packages/twenty-utils/setup-dev-env.sh
+    command:
+      exe: bash
+      args:
+        - packages/twenty-utils/setup-dev-env.sh
     effects:
       network: true
       writes:
@@ -206,7 +219,11 @@ tasks:
     notes: |
       Mirrors the CI install action (`yarn --immutable --check-cache`).
     category: setup
-    run: yarn --immutable --check-cache
+    command:
+      exe: yarn
+      args:
+        - --immutable
+        - --check-cache
     execution:
       default_mode: native
       modes:
@@ -228,7 +245,12 @@ tasks:
     context: host
     description: Reset and seed the Twenty server databases
     category: setup
-    run: npx nx database:reset twenty-server
+    command:
+      exe: npx
+      args:
+        - nx
+        - database:reset
+        - twenty-server
     depends_on:
       - install
       - setup:services
@@ -245,7 +267,12 @@ tasks:
     context: host
     description: Build the shared package required by frontend and server builds
     category: build
-    run: npx nx build twenty-shared
+    command:
+      exe: npx
+      args:
+        - nx
+        - build
+        - twenty-shared
     depends_on:
       - install
     requirements:
@@ -258,7 +285,12 @@ tasks:
     context: host
     description: Build the frontend package
     category: build
-    run: npx nx build twenty-front
+    command:
+      exe: npx
+      args:
+        - nx
+        - build
+        - twenty-front
     depends_on:
       - build:shared
       - setup:env
@@ -272,7 +304,12 @@ tasks:
     context: host
     description: Build the backend server package
     category: build
-    run: npx nx build twenty-server
+    command:
+      exe: npx
+      args:
+        - nx
+        - build
+        - twenty-server
     depends_on:
       - build:shared
       - setup:env
@@ -286,7 +323,12 @@ tasks:
     context: host
     description: Lint the frontend package
     category: test
-    run: npx nx lint twenty-front
+    command:
+      exe: npx
+      args:
+        - nx
+        - lint
+        - twenty-front
     depends_on:
       - install
     requirements:
@@ -296,7 +338,12 @@ tasks:
     context: host
     description: Lint the backend server package
     category: test
-    run: npx nx lint twenty-server
+    command:
+      exe: npx
+      args:
+        - nx
+        - lint
+        - twenty-server
     depends_on:
       - install
     requirements:
@@ -306,7 +353,12 @@ tasks:
     context: host
     description: Run aggregate lint checks for frontend and backend
     category: test
-    run: npx nx lint twenty-front
+    command:
+      exe: npx
+      args:
+        - nx
+        - lint
+        - twenty-front
     after_success:
       - lint:server
     execution:
@@ -325,7 +377,12 @@ tasks:
     context: host
     description: Typecheck the frontend package
     category: test
-    run: npx nx typecheck twenty-front
+    command:
+      exe: npx
+      args:
+        - nx
+        - typecheck
+        - twenty-front
     depends_on:
       - install
     requirements:
@@ -335,7 +392,12 @@ tasks:
     context: host
     description: Typecheck the backend server package
     category: test
-    run: npx nx typecheck twenty-server
+    command:
+      exe: npx
+      args:
+        - nx
+        - typecheck
+        - twenty-server
     depends_on:
       - install
     requirements:
@@ -345,7 +407,12 @@ tasks:
     context: host
     description: Run aggregate typechecks for frontend and backend
     category: test
-    run: npx nx typecheck twenty-front
+    command:
+      exe: npx
+      args:
+        - nx
+        - typecheck
+        - twenty-front
     after_success:
       - typecheck:server
     execution:
@@ -364,7 +431,12 @@ tasks:
     context: host
     description: Run frontend unit tests
     category: test
-    run: npx nx test twenty-front
+    command:
+      exe: npx
+      args:
+        - nx
+        - test
+        - twenty-front
     depends_on:
       - install
       - setup:env
@@ -375,7 +447,12 @@ tasks:
     context: host
     description: Run backend unit tests
     category: test
-    run: npx nx test twenty-server
+    command:
+      exe: npx
+      args:
+        - nx
+        - test
+        - twenty-server
     depends_on:
       - build:server
     requirements:
@@ -385,7 +462,12 @@ tasks:
     context: host
     description: Run backend integration tests with database reset
     category: test
-    run: npx nx run twenty-server:test:integration:with-db-reset
+    command:
+      exe: npx
+      args:
+        - nx
+        - run
+        - twenty-server:test:integration:with-db-reset
     depends_on:
       - setup:services
       - build:server
@@ -401,31 +483,25 @@ tasks:
         - postgres
         - redis
   verify:
-    context: host
     description: Run the CI verification chain (lint, typecheck, and unit tests)
     notes: |
       Mirrors the repo's CI task surface for frontend and backend package validation.
     category: test
-    run: sh -c 'echo "verify checks passed"'
-    execution:
-      default_mode: native
-      modes:
-        native:
-          context: host
-        container:
-          context: app
-    depends_on:
-      - lint
-      - typecheck
-      - test
-    requirements:
-      toolchains:
-        - node
+    aggregate:
+      tasks:
+        - lint
+        - typecheck
+        - test
   test:
     context: host
     description: Run core frontend and backend unit test surfaces
     category: test
-    run: npx nx test twenty-front
+    command:
+      exe: npx
+      args:
+        - nx
+        - test
+        - twenty-front
     after_success:
       - test:server
     execution:
@@ -516,7 +592,13 @@ tasks:
     context: host
     description: Start the backend worker process
     category: dev
-    run: npx nx run twenty-server:worker
+    launch:
+      kind: command
+      exe: npx
+      args:
+        - nx
+        - run
+        - twenty-server:worker
     depends_on:
       - setup:env
       - setup:services
