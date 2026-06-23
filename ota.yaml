@@ -5,7 +5,7 @@ project:
   type: application
 metadata:
   ota:
-    minimum_version: "1.6.18"
+    minimum_version: "1.6.21"
 execution:
   default_context: host
   contexts:
@@ -39,6 +39,25 @@ toolchains:
     fulfillment:
       source: corepack
       mode: run
+tools:
+  helm:
+    version: ">=3.8"
+    required: false
+    platforms:
+      linux:
+        acquisition:
+          provider: apt
+          package: helm
+      macos:
+        acquisition:
+          provider: brew
+          package: helm
+          source_config:
+            tap_name: homebrew/core
+      windows:
+        acquisition:
+          provider: winget
+          package: Helm.Helm
 surfaces:
   api:
     kind: http
@@ -638,6 +657,70 @@ tasks:
           project:
             host:
               primary: true
+  helm:deps:
+    context: host
+    description: Hydrate Helm chart dependencies for the self-host chart
+    notes: |
+      This is the owned setup lane for the chart under `packages/twenty-docker/helm/twenty`.
+      It keeps Helm dependency hydration out of opaque shell glue.
+    category: setup
+    prepare:
+      kind: dependency_hydration
+      medium: package_dependencies
+      source:
+        kind: helm
+        cwd: packages/twenty-docker/helm/twenty
+    requirements:
+      tools:
+        helm: ">=3.8"
+    effects:
+      writes:
+        - packages/twenty-docker/helm/twenty/charts
+      network: true
+      network_kind: dependency_hydration
+  helm:lint:
+    context: host
+    description: Lint the Twenty Helm chart
+    notes: |
+      Lint stays command-owned today. Ota owns dependency hydration, but not higher-level Helm
+      chart verification semantics.
+    category: test
+    adapter_inputs:
+      helm:
+        cwd: packages/twenty-docker/helm/twenty
+        chart: packages/twenty-docker/helm/twenty
+    command:
+      exe: helm
+      args:
+        - lint
+    depends_on:
+      - helm:deps
+    requirements:
+      tools:
+        helm: ">=3.8"
+  helm:render:
+    context: host
+    description: Render the Twenty Helm chart manifests
+    notes: |
+      Render stays command-owned today. This task pressures whether repeated chart cwd, release
+      name, namespace, and values-file truth should eventually become a first-class Helm render
+      surface.
+    category: build
+    adapter_inputs:
+      helm:
+        cwd: packages/twenty-docker/helm/twenty
+        chart: packages/twenty-docker/helm/twenty
+        release_name: my-twenty
+        namespace: twentycrm
+    command:
+      exe: helm
+      args:
+        - template
+    depends_on:
+      - helm:deps
+    requirements:
+      tools:
+        helm: ">=3.8"
 workflows:
   default: native-dev
   verify:
