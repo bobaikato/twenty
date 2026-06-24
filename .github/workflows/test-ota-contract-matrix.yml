@@ -2,15 +2,6 @@ name: 'Test: Ota contract matrix'
 
 on:
   workflow_dispatch:
-    inputs:
-      ota_repository:
-        description: Ota source repository to build for this matrix run
-        required: false
-        default: ota-run/ota
-      ota_ref:
-        description: Ota branch, tag, or commit to build for this matrix run
-        required: false
-        default: v1.6.19
   pull_request:
     paths:
       - 'ota.yaml'
@@ -75,11 +66,11 @@ jobs:
           node --version
           yarn --version
 
-      - name: Install ota from source
-        uses: ota-run/ota/.github/actions/install-ota-from-source@v1.6.19
+      - name: Set up ota
+        uses: ota-run/setup@v1.0.8
         with:
-          repository: ${{ github.event.inputs.ota_repository || 'ota-run/ota' }}
-          ref: ${{ github.event.inputs.ota_ref || 'v1.6.19' }}
+          source: contract
+          contract-path: ota.yaml
 
       - name: Assert ota minimum version from contract
         shell: bash
@@ -120,6 +111,27 @@ jobs:
         run: |
           ota validate --json . > ota-validate.json
           ota validate .
+
+      - name: Doctor contract
+        shell: bash
+        run: |
+          set +e
+          ota doctor --json . | tee ota-doctor.json
+          rc=${PIPESTATUS[0]}
+          set -e
+          cat ota-doctor.json
+          case "$rc" in
+            0|1) ;;
+            *) exit "$rc" ;;
+          esac
+
+      - name: List runnable task usage
+        shell: bash
+        run: ota tasks --use .
+
+      - name: List agent-safe task usage
+        shell: bash
+        run: ota tasks --safe --use .
 
       - name: Export workflow task matrices (JSON)
         shell: bash
